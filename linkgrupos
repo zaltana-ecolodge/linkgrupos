@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feed RSS Formatado</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }
+        h1 { text-align: center; color: #333; }
+        .feed-container { max-width: 800px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .item { border-bottom: 1px solid #ddd; padding: 15px 0; }
+        .item:last-child { border-bottom: none; }
+        h2 { font-size: 1.2em; margin: 0; color: #007BFF; }
+        h2 a { text-decoration: none; color: inherit; }
+        h2 a:hover { text-decoration: underline; }
+        p { margin: 10px 0; color: #555; }
+        small { color: #999; }
+    </style>
+</head>
+<body>
+
+    <h1>Últimas Atualizações</h1>
+    <div class="feed-container" id="rss-feed">Carregando feed...</div>
+
+    <script>
+        const rssUrl = 'https://zapier.com/engine/rss/17253049/linkgrupo';
+
+        fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`)
+            .then(response => response.json())
+            .then(data => {
+                let html = '';
+                data.items.forEach(item => {
+                    html += `
+                        <div class="item">
+                            <h2><a href="${item.link}" target="_blank">${item.title}</a></h2>
+                            <p>${item.description}</p>
+                            <small>Publicado em: ${new Date(item.pubDate).toLocaleDateString()}</small>
+                        </div>
+                    `;
+                });
+                document.getElementById('rss-feed').innerHTML = html;
+            })
+            .catch(error => {
+                document.getElementById('rss-feed').innerText = 'Erro ao carregar o feed.';
+                console.error('Erro ao buscar o RSS:', error);
+            });
+    </script>
+
+</body>
+</html>
