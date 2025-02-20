@@ -44,7 +44,7 @@
 </head>
 <body>
     <div class="container">
-        <h2>🔗 Último Link Gerado</h2>
+        <h2>Gerador de Link - Zaltana | Ecolodge</h2>
         <div id="feed-content">
             Carregando o último link...
         </div>
@@ -66,7 +66,7 @@
                 const title = latestItem.querySelector('title').textContent;
                 const link = latestItem.querySelector('link').textContent;
 
-                document.getElementById('feed-content').innerHTML = `<a href="${link}" target="_blank">${title}</a>`;
+                document.getElementById('feed-content').innerHTML = `<a href="${link}" target="_blank">${title}</a><br>`;
             } catch (error) {
                 document.getElementById('feed-content').innerText = 'Erro ao carregar o feed.';
                 console.error('Erro ao buscar o feed:', error);
