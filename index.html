@@ -21,18 +21,19 @@
             margin: auto;
         }
         .feed-link {
-            word-break: break-all;
+            word-break: break-word;
             margin: 10px 0;
         }
-        .copy-btn {
+        .copy-btn, .submit-btn {
             background-color: #000;
             color: #fff;
             border: none;
             padding: 10px 15px;
             cursor: pointer;
             border-radius: 4px;
+            margin-top: 10px;
         }
-        .copy-btn:hover {
+        .copy-btn:hover, .submit-btn:hover {
             background-color: #333;
         }
         .message {
@@ -40,20 +41,60 @@
             color: green;
             display: none;
         }
+        .error {
+            color: red;
+            margin-top: 5px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        label {
+            font-weight: bold;
+            text-align: left;
+            display: block;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>Gerador de Link - Zaltana | Ecolodge</h2>
+        <h2>🔗 Último Link Gerado</h2>
         <div id="feed-content">
             Carregando o último link...
         </div>
         <button class="copy-btn" onclick="copyLink()">Copiar</button>
         <div class="message" id="copy-message">Copiado com sucesso!</div>
+
+        <hr>
+
+        <h3>📤 Disparar Trigger</h3>
+        <form id="trigger-form">
+            <label for="codigo-grupo">Código do grupo:</label>
+            <input type="text" id="codigo-grupo" placeholder="Ex.: B24-GP01" required>
+            <small>Preencher no formato TXX-GPXX. Substitua 'T' por B, BM, F, FM, E ou EM. XX = números.</small>
+            <div class="error" id="codigo-error"></div>
+
+            <label for="valor-total">Valor total:</label>
+            <input type="text" id="valor-total" placeholder="Ex.: 5000" required>
+            <small>Somente números. Não use ponto, vírgula ou centavos.</small>
+            <div class="error" id="total-error"></div>
+
+            <label for="valor-reserva">Valor de reserva:</label>
+            <input type="text" id="valor-reserva" placeholder="Ex.: 1000">
+            <small>(Opcional) Apenas números, sem ponto, vírgula ou centavos.</small>
+            <div class="error" id="reserva-error"></div>
+
+            <button type="button" class="submit-btn" onclick="enviarTrigger()">Enviar</button>
+            <div class="message" id="trigger-message">Trigger enviado com sucesso!</div>
+        </form>
     </div>
 
     <script>
         const feedUrl = 'https://zapier.com/engine/rss/17253049/linkgrupo'; // Substitua pelo seu link RSS
+        const zapierWebhookUrl = 'https://hooks.zapier.com/hooks/catch/17253049/2w0y6ef/'; // Substitua pelo seu Webhook
 
         // Função para buscar o último item do feed RSS
         async function fetchLatestFeed() {
@@ -66,7 +107,7 @@
                 const title = latestItem.querySelector('title').textContent;
                 const link = latestItem.querySelector('link').textContent;
 
-                document.getElementById('feed-content').innerHTML = `<a href="${link}" target="_blank">${title}</a><br>`;
+                document.getElementById('feed-content').innerHTML = `<a href="${link}" target="_blank">${title}</a>`;
             } catch (error) {
                 document.getElementById('feed-content').innerText = 'Erro ao carregar o feed.';
                 console.error('Erro ao buscar o feed:', error);
@@ -83,6 +124,68 @@
                     setTimeout(() => msg.style.display = 'none', 2000);
                 });
             }
+        }
+
+        // Função para enviar o Trigger
+        function enviarTrigger() {
+            const codigo = document.getElementById('codigo-grupo').value.trim();
+            const valorTotal = document.getElementById('valor-total').value.trim();
+            const valorReserva = document.getElementById('valor-reserva').value.trim();
+
+            const codigoError = document.getElementById('codigo-error');
+            const totalError = document.getElementById('total-error');
+            const reservaError = document.getElementById('reserva-error');
+            const triggerMsg = document.getElementById('trigger-message');
+
+            // Resetar mensagens de erro
+            codigoError.textContent = '';
+            totalError.textContent = '';
+            reservaError.textContent = '';
+            triggerMsg.style.display = 'none';
+
+            // Validação do Código do Grupo
+            const regexCodigo = /^(B|BM|F|FM|E|EM)([2-9][4-9]|[3-9][0-9])-GP\d{2}$/;
+            if (!regexCodigo.test(codigo)) {
+                codigoError.textContent = 'Formato inválido. Siga o padrão TXX-GPXX.';
+                return;
+            }
+
+            // Validação do Valor Total
+            if (!/^[0-9]+$/.test(valorTotal)) {
+                totalError.textContent = 'Preencha apenas com números.';
+                return;
+            }
+
+            // Validação do Valor de Reserva (se preenchido)
+            if (valorReserva && !/^[0-9]+$/.test(valorReserva)) {
+                reservaError.textContent = 'Preencha apenas com números.';
+                return;
+            }
+
+            // Enviar os dados para o Webhook do Zapier
+            fetch(zapierWebhookUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    codigo_grupo: codigo,
+                    valor_total: parseInt(valorTotal),
+                    valor_reserva: valorReserva ? parseInt(valorReserva) : 0
+                })
+            })
+            .then(response => {
+                if (response.ok) {
+                    triggerMsg.style.display = 'block';
+                    setTimeout(() => triggerMsg.style.display = 'none', 2000);
+                    document.getElementById('trigger-form').reset();
+                } else {
+                    throw new Error('Erro ao enviar os dados.');
+                }
+            })
+            .catch(error => {
+                alert('Erro ao enviar trigger: ' + error.message);
+            });
         }
 
         // Carregar o último feed ao abrir a página
